@@ -1,0 +1,27 @@
+linux commands for usefull
+
+
+grep -i cron /var/log/syslog|tail -2
+
+sudo service cron restart
+
+
+cat /var/log/syslog | grep cron
+
+
+service rsyslog restart
+
+sudo touch /var/spool/cron/crontabs
+
+sudo chmod 600 /var/spool/cron/crontabs/user
+
+
+ps -ef | grep cron
+
+
+sudo /etc/init.d/cron restart
+
+
+systemctl status cron
+
+sudo  status cron

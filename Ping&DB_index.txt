@@ -1,0 +1,65 @@
+
+PING MONITORING
+===============
+
+
+
+
+!/bin/sh
+cd /OMGNOC/Airtel/PING_MONITORING/
+A=`grep 172.24.132.159 /OMGNOC/Airtel/LOG/ping.out|grep " 0% packet loss"|wc -l`
+B=`grep 172.24.165.119 /OMGNOC/Airtel/LOG/ping.out|grep " 0% packet loss"|wc -l`
+C=`grep 10.159.45.29 /OMGNOC/Airtel/LOG/ping.out|grep " 0% packet loss"|wc -l`
+
+CURR_TIME=`date '+%d %b %l:%M %p'`
+SCRIPT_LOG=/OMGNOC/Airtel/PING_MONITORING/LOGS
+logdate=`date +%Y"-"%m"-"%d`
+LOG_PATH=$SCRIPT_LOG/PING_$logdate.txt
+THRESHOLD=0
+
+x=`tail -1 /OMGNOC/Airtel/LOG/ping.out|awk -F " " '{print $2}'`
+a=`date -d "$x" +%s`
+b=`date +%s`
+diff=`echo $b - $a | bc`
+p=`expr $diff / 60`
+
+if [ $A -eq $THRESHOLD ] || [ $B -eq $THRESHOLD ]
+then
+
+echo "0"
+stats0="$CURR_TIME | STATS-0 |  Might be some issue in Billing as we are getting Packet loss for Opco IN ip from $p Min | 0"
+
+echo "$stats0" >> $LOG_PATH
+
+else
+echo "1"
+stats1="$CURR_TIME | STATS-1 |   Billing is Processing fine  and last successfull ping happened $p Min Before | 1"
+
+echo "$stats1" >> $LOG_PATH
+
+fi
+
+
+
+To Monitor the DB index
+========================
+
+
+#/bin/bash
+
+buffer_size=`grep 'innodb_buffer_pool_size' /etc/my.cnf | awk -F "=" '{print $2}' | awk -F "M" '{print $1}'`
+Index_size=`mysql -uroot -ponmobile prism -e "SELECT sum(ROUND(index_length/1024/1024,2)) total_index_size_mb FROM information_schema.TABLES;" | tail -1 | awk -F "." '{print $1}'`
+echo "Buffer_Size---->" $buffer_size
+echo "Index_size---->" $Index_size
+
+buffer_size_percent=$((90*$buffer_size/100))
+echo "Threshold---->" $buffer_size_percent
+
+if [ "$Index_size" -gt "$buffer_size_percent" ];then
+echo "0" > /var/zabbix/DB_INDEX.txt
+echo "Need to Optimize"
+else
+echo "1" > /var/zabbix/DB_INDEX.txt
+echo "No Need to Optimize (If Index size is less than threshold size then no need to Optimize)"
+fi
+exit
